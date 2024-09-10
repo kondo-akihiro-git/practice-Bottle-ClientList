@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APIの利用方法</title>
+</head>
+
+<body>
+    <h1>会社情報スクレイピングAPI</h1>
+    <p>このAPIは、指定したURLのWebページから電話番号、メールアドレス、お問い合わせリンクを取得し、JSON形式で返却します。</p>
+
+    <h2>使い方</h2>
+    <p>以下のエンドポイントにPOSTリクエストを送信してください。</p>
+    <pre>
+    POST /extract
+    Body: {
+    "urls": [
+        "https://example.com",
+        "https://anotherexample.com"
+    ]
+    }
+    </pre>
+
+    <h2>戻り値</h2>
+    <p>例:</p>
+    <pre>
+    {
+    "https://example.com": {
+        "phone_numbers": ["+81 90-1234-5678"],
+        "emails": ["info@example.com"],
+        "contact_links": ["/contact"]
+    }
+    }
+    </pre>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-from bottle import Bottle, request, response
+from bottle import Bottle, request, response, static_file
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -42,6 +42,11 @@ def extract_contact_info(url):
     except Exception as e:
         return {'error': str(e)}
 
+# トップページを表示するためのルート
+@app.route('/')
+def index():
+    return static_file('index.html', root='.')
+
 # APIエンドポイント
 @app.route('/extract', method='POST')
 def extract_info():
@@ -53,8 +58,6 @@ def extract_info():
 
     response.content_type = 'application/json'
     return json.dumps(results, ensure_ascii=False, indent=4)
-
-# 例：https://connect-world.co.jp/
 
 # アプリケーションの実行
 if __name__ == '__main__':
