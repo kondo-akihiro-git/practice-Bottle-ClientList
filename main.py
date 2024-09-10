@@ -48,16 +48,18 @@ def extract_contact_info(url):
         return {'error': str(e)}
 
 # APIエンドポイント
-@app.route('/extract', method='POST')
+@app.route('/extract', method='GET')
 def extract_info():
-    urls = request.json.get('urls', [])
-    results = {}
-
-    for url in urls:
-        results[url] = extract_contact_info(url)
+    # クエリパラメータからURLを取得
+    url = request.query.get('company_url')
+    if not url:
+        response.status = 400
+        return {'error': 'Parameter "company_url" is required.'}
+    
+    result = extract_contact_info(url)
 
     response.content_type = 'application/json'
-    return json.dumps(results, ensure_ascii=False, indent=4)
+    return json.dumps(result, ensure_ascii=False, indent=4)
 
 # アプリケーションの実行
 if __name__ == '__main__':
