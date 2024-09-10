@@ -6,6 +6,11 @@ import re
 
 app = Bottle()
 
+# トップページを表示するためのルート
+@app.route('/')
+def index():
+    return static_file('index.html', root='.')
+
 # URLから情報を取得する関数
 def extract_contact_info(url):
     try:
@@ -41,11 +46,6 @@ def extract_contact_info(url):
         }
     except Exception as e:
         return {'error': str(e)}
-
-# トップページを表示するためのルート
-@app.route('/')
-def index():
-    return static_file('index.html', root='.')
 
 # APIエンドポイント
 @app.route('/extract', method='POST')

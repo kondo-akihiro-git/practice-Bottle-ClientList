@@ -23,6 +23,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Deploy to Vercel
-        run: vercel --prod
+        run: npx vercel --prod
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
