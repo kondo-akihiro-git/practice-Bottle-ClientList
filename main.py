@@ -11,7 +11,7 @@ app = Bottle()
 
 # Google Sheets API認証設定
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
 client = gspread.authorize(creds)
 
