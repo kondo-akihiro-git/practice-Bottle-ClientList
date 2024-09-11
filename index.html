@@ -12,6 +12,7 @@
             font-family: 'Arial', sans-serif;
             padding: 20px;
             background-color: #f0f2f5;
+            min-width: 600px;
         }
 
         .container {
@@ -52,15 +53,69 @@
                 width: 100%;
             }
         }
+
+        .spacer {
+            padding: 1.5rem;
+        }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>会社情報スクレイピングAPI</h1>
-        <p>このAPIを使うことで、指定した会社のWebページから電話番号、メールアドレス、お問い合わせリンクをスクレイピングし、JSON形式で取得できます。</p>
 
-        <h2>使い方</h2>
+    <div class="container">
+        <div class="spacer"></div>
+        <h1>会社情報スクレイピングAPI</h1>
+        <p>指定した会社のWebページから電話番号/メールアドレス/お問い合わせリンクをスクレイピングします。主に営業リストの作成を目的としております。
+            必ずしも取得した連絡先が適切であることは保証できないため、あくまで営業リスト作成にあたっての補助ツールとして利用していただければと思います。
+        </p>
+
+        <div class="spacer"></div>
+
+        <!-- フォーム入力 -->
+        <h2>フォーム入力</h2>
+        <p>以下に会社のホームページURLを入力することで、会社の電話番号/メールアドレス/お問い合わせリンクを取得できます。</p>
+        <form id="companyForm">
+            <input type="text" id="companyUrl" placeholder="会社のホームページURL"
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" />
+            <button type="submit" class="ant-btn ant-btn-primary" style="margin-top: 10px;">連絡先を検索する</button>
+        </form>
+
+        <div id="form_results" style="margin-top: 20px;">
+        </div>
+
+        <div class="spacer"></div>
+
+        <!-- スプレッドシート更新 -->
+        <h2>スプレッドシート更新</h2>
+        <p>以下の手順でスプレッドシートを設定することで、スプレッドシートの読取/更新ができます。</p>
+        <ol>
+            <li><strong>新しいスプレッドシートの作成</strong><br>
+                営業リストなどが存在する場合は、新しくスプレッドシートを作成することを推奨します。
+                スプレッドシートのA列2行目に会社HPのURLを貼り付けます。
+                ※1行目はヘッダーとして使用するため、データは2行目から貼り付けてください。</li>
+            <li><strong>スプレッドシートIDの取得</strong><br>
+                スプレッドシートIDはGoogleスプレッドシートのURLの一部です。以下の位置にIDがあります。<br>
+                <pre><p>
+https://docs.google.com/spreadsheets/d/{スプレッドシートID}/edit?gid=0#gid=0
+</p></pre>
+            </li>
+            <li><strong>データの出力</strong><br>
+                以下にスプレッドシートIDを入力することで、スプレッドシートのB列に電話番号/C列にメールアドレス/D列にお問い合わせリンクが出力されます。</li>
+        </ol>
+
+        <form id="spreadsheetForm">
+            <input type="text" id="spreadsheetId" placeholder="スプレッドシートID"
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" />
+            <button type="submit" class="ant-btn ant-btn-primary" style="margin-top: 10px;">連絡先を検索、スプレッドシートを更新する</button>
+        </form>
+
+        <div id="spread_results" style="margin-top: 20px;">
+        </div>
+
+        <div class="spacer"></div>
+
+        <!-- URLからのJSONデータ取得 -->
+        <h2>URLからのJSONデータ取得</h2>
         <p>次のURLに会社のホームページURLをクエリパラメータとして追加してください。</p>
         <pre><p>
 GET https://clientinfo.vercel.app/extract?company_url={会社のHPのURL}
@@ -69,8 +124,6 @@ GET https://clientinfo.vercel.app/extract?company_url={会社のHPのURL}
         <pre><p>
 GET https://clientinfo.vercel.app/extract?company_url=https://connect-world.co.jp/
 </p></pre>
-
-        <h2>戻り値の例</h2>
         <p>APIは以下のようなJSONデータを返します。</p>
         <pre>
             <p>
@@ -86,12 +139,63 @@ GET https://clientinfo.vercel.app/extract?company_url=https://connect-world.co.j
 
         <button class="ant-btn ant-btn-primary"
             onclick="window.open('https://clientinfo.vercel.app/extract?company_url=https://connect-world.co.jp/', '_blank')">
-            今すぐ試す
+            別タブで試す
         </button>
     </div>
 
+    <div class="spacer"></div>
+
     <script>
-        // スクリプトを必要に応じて追加可能
+        // 直接URLをinputするパターン
+        document.getElementById('companyForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const url = document.getElementById('companyUrl').value;
+            fetch(`/extract?company_url=${encodeURIComponent(url)}`)
+                .then(response => response.json())
+                .then(data => {
+                    let resultHTML = '';
+                    if (data.error) {
+                        resultHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
+                    } else {
+                        resultHTML += `<h3>電話番号</h3><ul>${data.phone_numbers.map(num => `<li>${num}</li>`).join('')}</ul>`;
+                        resultHTML += `<h3>メールアドレス</h3><ul>${data.emails.map(email => `<li>${email}</li>`).join('')}</ul>`;
+                        resultHTML += `<h3>お問い合わせリンク</h3><ul>${data.contact_links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}</ul>`;
+                    }
+                    document.getElementById('form_results').innerHTML = resultHTML;
+                })
+                .catch(error => {
+                    document.getElementById('form_results').innerHTML = `<p style="color: red;">エラー: ${error.message}</p>`;
+                });
+        });
+
+        // スプレッドシートから読み込み、更新するパターン
+        document.getElementById('spreadsheetForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const spreadsheetId = document.getElementById('spreadsheetId').value;
+            if (!spreadsheetId) {
+                alert('スプレッドシートIDを入力してください。');
+                return;
+            }
+
+            fetch(`/update_spreadsheet?spreadsheet_id=${encodeURIComponent(spreadsheetId)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('spread_results').innerHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
+                    } else {
+                        document.getElementById('spread_results').innerHTML = `<p>スプレッドシートが更新されました。</p>`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('spread_results').innerHTML = `<p style="color: red;">エラー: ${error.message}</p>`;
+                });
+        });
+
     </script>
 </body>
 

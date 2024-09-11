@@ -1,10 +1,17 @@
 from bottle import Bottle, request, response, static_file
 import requests
+import gspread
 from bs4 import BeautifulSoup
+from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re
 
 app = Bottle()
+
+# Google Sheets API認証設定
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+client = gspread.authorize(creds)
 
 # トップページを表示するためのルート
 @app.route('/')
@@ -60,6 +67,37 @@ def extract_info():
 
     response.content_type = 'application/json'
     return json.dumps(result, ensure_ascii=False, indent=4)
+
+@app.route('/update_spreadsheet', methods=['GET'])
+def update_spreadsheet():
+    spreadsheet_id = request.query.get('spreadsheet_id')
+    if not spreadsheet_id:
+        response.status = 400
+        return json.dumps({"error": "スプレッドシートIDが必要です。"}, ensure_ascii=False, indent=4)
+
+    try:
+        sheet = client.open_by_key(spreadsheet_id).sheet1
+        urls = sheet.col_values(1)[1:]  # A列の値を取得（1行目はヘッダー）
+        
+
+        for index, url in enumerate(urls, start=2):  # B列、C列、D列を更新するために2から始める
+            info = extract_contact_info(url)
+            sheet.update_cell(index, 2, ', '.join(info['phone_numbers']))  # B列
+            sheet.update_cell(index, 3, ', '.join(info['emails']))  # C列
+            sheet.update_cell(index, 4, ', '.join(info['contact_links']))  # D列
+
+        return json.dumps({"success": "スプレッドシートが更新されました。"}, ensure_ascii=False, indent=4)
+
+    except gspread.SpreadsheetNotFound:
+        response.status = 404
+        return json.dumps({"error": "スプレッドシートが見つかりません。"}, ensure_ascii=False, indent=4)
+    except gspread.APIError as e:
+        response.status = 500
+        return json.dumps({"error": f"Google Sheets APIエラー: {str(e)}"}, ensure_ascii=False, indent=4)
+    except Exception as e:
+        response.status = 500
+        return json.dumps({"error": str(e)}, ensure_ascii=False, indent=4)
+
 
 # アプリケーションの実行
 if __name__ == '__main__':
