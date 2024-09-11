@@ -2,3 +2,5 @@ bottle==0.13.1
 beautifulsoup4==4.12.3
 requests==2.32.2
 soupsieve==2.5
+gspread
+oauth2client
