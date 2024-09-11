@@ -75,8 +75,9 @@
         <h2>フォーム入力</h2>
         <p>以下に会社のホームページURLを入力することで、会社の電話番号/メールアドレス/お問い合わせリンクを取得できます。</p>
         <form id="companyForm">
-            <input type="text" id="companyUrl" placeholder="会社のホームページURL"
-                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" />
+            <input type="url" id="companyUrl" placeholder="会社のホームページURL"
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" required
+                pattern="https?://.+" />
             <button type="submit" class="ant-btn ant-btn-primary" style="margin-top: 10px;">連絡先を検索する</button>
         </form>
 
@@ -105,8 +106,10 @@ https://docs.google.com/spreadsheets/d/{スプレッドシートID}/edit?gid=0#g
 
         <form id="spreadsheetForm">
             <input type="text" id="spreadsheetId" placeholder="スプレッドシートID"
-                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" />
-            <button type="submit" class="ant-btn ant-btn-primary" style="margin-top: 10px;">連絡先を検索、スプレッドシートを更新する</button>
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" required
+                pattern="[a-zA-Z0-9_-]+" />
+            <button type="submit" class="ant-btn ant-btn-primary"
+                style="margin-top: 10px;">連絡先を検索、スプレッドシートを更新する</button>
         </form>
 
         <div id="spread_results" style="margin-top: 20px;">
@@ -156,10 +159,32 @@ GET https://clientinfo.vercel.app/extract?company_url=https://connect-world.co.j
                     let resultHTML = '';
                     if (data.error) {
                         resultHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
+                    } else if ((!data.phone_numbers || data.phone_numbers.length === 0) &&
+                        (!data.emails || data.emails.length === 0) &&
+                        (!data.contact_links || data.contact_links.length === 0)) {
+                        // 取得データがすべて空の場合の処理
+                        resultHTML = `<p>データを取得できませんでした。</p>`;
                     } else {
-                        resultHTML += `<h3>電話番号</h3><ul>${data.phone_numbers.map(num => `<li>${num}</li>`).join('')}</ul>`;
-                        resultHTML += `<h3>メールアドレス</h3><ul>${data.emails.map(email => `<li>${email}</li>`).join('')}</ul>`;
-                        resultHTML += `<h3>お問い合わせリンク</h3><ul>${data.contact_links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}</ul>`;
+                        // 電話番号が取得できなかった場合
+                        if (!data.phone_numbers || data.phone_numbers.length === 0) {
+                            resultHTML += `<h4>電話番号</h4><ul><li>データを取得できませんでした。</li></ul>`;
+                        } else {
+                            resultHTML += `<h4>電話番号</h4><ul>${data.phone_numbers.map(num => `<li>${num}</li>`).join('')}</ul>`;
+                        }
+
+                        // メールアドレスが取得できなかった場合
+                        if (!data.emails || data.emails.length === 0) {
+                            resultHTML += `<h4>メールアドレス</h4><ul><li>データを取得できませんでした。</li></ul>`;
+                        } else {
+                            resultHTML += `<h4>メールアドレス</h4><ul>${data.emails.map(email => `<li>${email}</li>`).join('')}</ul>`;
+                        }
+
+                        // お問い合わせリンクが取得できなかった場合
+                        if (!data.contact_links || data.contact_links.length === 0) {
+                            resultHTML += `<h4>お問い合わせリンク</h4><ul><li>データを取得できませんでした。</li></ul>`;
+                        } else {
+                            resultHTML += `<h4>お問い合わせリンク</h4><ul>${data.contact_links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}</ul>`;
+                        }
                     }
                     document.getElementById('form_results').innerHTML = resultHTML;
                 })
