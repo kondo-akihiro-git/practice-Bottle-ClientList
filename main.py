@@ -19,11 +19,11 @@ app = Bottle()
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 # 本番用
-# credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-# creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
+credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
 
 # DEBUG用
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+# creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 
 client = gspread.authorize(creds)
 
