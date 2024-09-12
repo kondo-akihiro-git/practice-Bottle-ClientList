@@ -6,11 +6,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re
 import os
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-import time
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 
 app = Bottle()
@@ -19,11 +14,11 @@ app = Bottle()
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 # 本番用
-credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
+# credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+# creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
 
 # DEBUG用
-# creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 
 client = gspread.authorize(creds)
 
@@ -45,24 +40,8 @@ def extract_contact_info(url):
                 'contact_links': []
             }
 
-        # ChromeDriverの設定
-        service = Service('./chromedriver') 
-        driver = webdriver.Chrome(service=service)
-
-        # DriverでWebページを開く
-        driver.get(url)
-
-        # JavaScriptの実行を待つ（JSのReadStateがComplateになるまで待つ）
-        WebDriverWait(driver, 10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
-
-        # ページのHTMLを取得
-        page_source = driver.page_source
-
-        # ドライバーを終了
-        driver.quit()        
-
         # HTML解析する
-        soup = BeautifulSoup(page_source, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
 
         # 電話番号、メールアドレス、お問い合わせリンクの抽出
         phone_numbers = set()
