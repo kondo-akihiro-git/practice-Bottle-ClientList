@@ -11,16 +11,22 @@ app = Bottle()
 
 # Google Sheets API認証設定
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+# 本番用
 credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
+
+# DEBUG用
+# creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+
 client = gspread.authorize(creds)
 
-# トップページを表示するためのルート
+# トップページの表示ルート
 @app.route('/')
 def index():
     return static_file('index.html', root='.')
 
-# URLから情報を取得する関数
+# URLから情報を取得する関数(フォーム入力/URL/スプレッドシート全て共通の処理)
 def extract_contact_info(url):
     try:
         # Webページの内容を取得
@@ -45,8 +51,12 @@ def extract_contact_info(url):
 
         # お問い合わせリンクを抽出
         for a_tag in soup.find_all('a', href=True):
+            href = a_tag['href']
             if 'contact' in a_tag.text.lower() or 'お問い合わせ' in a_tag.text:
-                contact_links.add(a_tag['href'])
+                # 相対パスのリンクを絶対パスに変換
+                if not href.startswith('http'):
+                    href = url.rstrip('/') + '/' + href.lstrip('/')
+                contact_links.add(href)
 
         return {
             'phone_numbers': list(phone_numbers),
@@ -56,40 +66,74 @@ def extract_contact_info(url):
     except Exception as e:
         return {'error': str(e)}
 
-# APIエンドポイント
+# APIエンドポイント（フォーム入力押下時/URL押下時）
 @app.route('/extract', method='GET')
 def extract_info():
     # クエリパラメータからURLを取得
     url = request.query.get('company_url')
+
+    # 入力内容がURLではない場合
     if not url:
         response.status = 400
         return {'error': 'Parameter "company_url" is required.'}
     
+    # 連絡先の検索
     result = extract_contact_info(url)
 
+    # JSON形式で返却
     response.content_type = 'application/json'
     return json.dumps(result, ensure_ascii=False, indent=4)
 
+
+# スプレッドシートの読み取り/更新
 @app.route('/update_spreadsheet', methods=['GET'])
 def update_spreadsheet():
+
+    # スプレッドシートの読み込み
     spreadsheet_id = request.query.get('spreadsheet_id')
     if not spreadsheet_id:
         response.status = 400
         return json.dumps({"error": "スプレッドシートIDが必要です。"}, ensure_ascii=False, indent=4)
 
+    # 読み込んだスプレッドシートのA列＝会社URL（1行目はヘッダー）
     try:
         sheet = client.open_by_key(spreadsheet_id).sheet1
-        urls = sheet.col_values(1)[1:]  # A列の値を取得（1行目はヘッダー）
+        urls = sheet.col_values(1)[1:]  
         
+        # B列、C列、D列を更新するために2から始める
+        for index, url in enumerate(urls, start=2):  
 
-        for index, url in enumerate(urls, start=2):  # B列、C列、D列を更新するために2から始める
+            # URL形式かどうかを確認
+            if not (url.startswith("http://") or url.startswith("https://")):
+                # URLではない場合は、BCD列に全角の「ー」を出力
+                sheet.update_cell(index, 2, 'ー')  # B列
+                sheet.update_cell(index, 3, 'ー')  # C列
+                sheet.update_cell(index, 4, 'ー')  # D列
+                continue  # 次のループへ
+
+            # 連絡先を検索
             info = extract_contact_info(url)
-            sheet.update_cell(index, 2, ', '.join(info['phone_numbers']))  # B列
-            sheet.update_cell(index, 3, ', '.join(info['emails']))  # C列
-            sheet.update_cell(index, 4, ', '.join(info['contact_links']))  # D列
+
+            # スプレッドシートの更新（検索結果が空の場合に「ー」を表示）
+            if not info['phone_numbers']:
+                sheet.update_cell(index, 2, 'ー')  # B列
+            else:
+                sheet.update_cell(index, 2, ', '.join(info['phone_numbers']))  # B列
+
+            if not info['emails']:
+                sheet.update_cell(index, 3, 'ー')  # C列
+            else:
+                sheet.update_cell(index, 3, ', '.join(info['emails']))  # C列
+
+            if not info['contact_links']:
+                sheet.update_cell(index, 4, 'ー')  # D列
+            else:
+                sheet.update_cell(index, 4, ', '.join(info['contact_links']))  # D列
+
 
         return json.dumps({"success": "スプレッドシートが更新されました。"}, ensure_ascii=False, indent=4)
 
+    # エラーハンドリング
     except gspread.SpreadsheetNotFound:
         response.status = 404
         return json.dumps({"error": "スプレッドシートが見つかりません。"}, ensure_ascii=False, indent=4)
@@ -99,7 +143,6 @@ def update_spreadsheet():
     except Exception as e:
         response.status = 500
         return json.dumps({"error": str(e)}, ensure_ascii=False, indent=4)
-
 
 # アプリケーションの実行
 if __name__ == '__main__':
