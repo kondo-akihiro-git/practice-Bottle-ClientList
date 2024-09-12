@@ -6,6 +6,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re
 import os
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+import time
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 
 app = Bottle()
 
@@ -13,11 +19,11 @@ app = Bottle()
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 # 本番用
-credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
+# credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+# creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
 
 # DEBUG用
-# creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 
 client = gspread.authorize(creds)
 
@@ -29,10 +35,34 @@ def index():
 # URLから情報を取得する関数(フォーム入力/URL/スプレッドシート全て共通の処理)
 def extract_contact_info(url):
     try:
-        # Webページの内容を取得
+
+        # レスポンスエラーの場合は連絡先は全て空として返却
         response = requests.get(url)
-        response.raise_for_status()  # HTTPエラーチェック
-        soup = BeautifulSoup(response.text, 'html.parser')
+        if response.status_code != 200:
+            return {
+                'phone_numbers': [],
+                'emails': [],
+                'contact_links': []
+            }
+
+        # ChromeDriverの設定
+        service = Service('./chromedriver') 
+        driver = webdriver.Chrome(service=service)
+
+        # DriverでWebページを開く
+        driver.get(url)
+
+        # JavaScriptの実行を待つ（JSのReadStateがComplateになるまで待つ）
+        WebDriverWait(driver, 10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+
+        # ページのHTMLを取得
+        page_source = driver.page_source
+
+        # ドライバーを終了
+        driver.quit()        
+
+        # HTML解析する
+        soup = BeautifulSoup(page_source, 'html.parser')
 
         # 電話番号、メールアドレス、お問い合わせリンクの抽出
         phone_numbers = set()
@@ -63,8 +93,18 @@ def extract_contact_info(url):
             'emails': list(emails),
             'contact_links': list(contact_links)
         }
+    
     except Exception as e:
         return {'error': str(e)}
+
+    # 例外時も全て空として返却
+    # except Exception:
+    #     print("----exception---")
+    #     return {
+    #         'phone_numbers': [],
+    #         'emails': [],
+    #         'contact_links': []
+    #     }
 
 # APIエンドポイント（フォーム入力押下時/URL押下時）
 @app.route('/extract', method='GET')
