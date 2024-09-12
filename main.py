@@ -6,19 +6,15 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re
 import os
-
+from credentials import get_credentials
 
 app = Bottle()
 
 # Google Sheets API認証設定
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# 本番用
-# credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-# creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(credentials_json), scope)
-
-# DEBUG用
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+# Google Sheets API認証設定
+creds = get_credentials()
 
 client = gspread.authorize(creds)
 
