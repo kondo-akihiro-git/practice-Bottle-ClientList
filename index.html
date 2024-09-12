@@ -125,23 +125,27 @@ GET https://clientinfo.vercel.app/extract?company_url={会社のHPのURL}
 </p></pre>
         <p>例えば、<code>https://connect-world.co.jp/</code>を指定する場合は以下のようになります。</p>
         <pre><p>
-GET https://clientinfo.vercel.app/extract?company_url=https://connect-world.co.jp/
+GET https://clientinfo.vercel.app/extract?company_url=https://ebacorp.jp/
 </p></pre>
         <p>APIは以下のようなJSONデータを返します。</p>
         <pre>
             <p>
 {
-    "https://connect-world.co.jp/": {
-        "phone_numbers": ["+81 90-1234-5678"],
-        "emails": ["info@connect-world.co.jp"],
-        "contact_links": ["/contact"]
-    }
+    "phone_numbers": [
+        "03-5909-0716",
+        "03-5778-4829"
+    ],
+    "emails": [],
+    "contact_links": [
+        "https://ebacorp.jp/form",
+        "https://ebacorp.jp/form/"
+    ]
 }
 </p>
         </pre>
 
         <button class="ant-btn ant-btn-primary"
-            onclick="window.open('https://clientinfo.vercel.app/extract?company_url=https://connect-world.co.jp/', '_blank')">
+            onclick="window.open('https://clientinfo.vercel.app//extract?company_url=https://ebacorp.jp/', '_blank')">
             別タブで試す
         </button>
     </div>

@@ -7,6 +7,7 @@ import json
 import re
 import os
 from credentials import get_credentials
+import logging
 
 app = Bottle()
 
@@ -17,6 +18,10 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 creds = get_credentials()
 
 client = gspread.authorize(creds)
+
+# ロガーの設定
+# logging.basicConfig(level=logging.DEBUG, filename='html_output.log', filemode='w')
+
 
 # トップページの表示ルート
 @app.route('/')
@@ -35,9 +40,19 @@ def extract_contact_info(url):
                 'emails': [],
                 'contact_links': []
             }
+        
+        # HTML解析する前にHTMLを出力
+        html_content = response.text
+        
+        # 解析対象のHTMLの最初の1000文字をログに出力
+        # logging.debug(f"HTML content from {url}:\n{html_content[:]}") 
+        
+        # HTMLをファイルに保存（必要に応じて）
+        # with open('output.html', 'w', encoding='utf-8') as file:
+        #     file.write(html_content)        
 
         # HTML解析する
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(html_content, 'html.parser')
 
         # 電話番号、メールアドレス、お問い合わせリンクの抽出
         phone_numbers = set()
@@ -55,13 +70,45 @@ def extract_contact_info(url):
             emails.add(match)
 
         # お問い合わせリンクを抽出
+        all_links = set() 
         for a_tag in soup.find_all('a', href=True):
             href = a_tag['href']
-            if 'contact' in a_tag.text.lower() or 'お問い合わせ' in a_tag.text:
-                # 相対パスのリンクを絶対パスに変換
-                if not href.startswith('http'):
-                    href = url.rstrip('/') + '/' + href.lstrip('/')
-                contact_links.add(href)
+            if not href.startswith('http'):
+                href = url.rstrip('/') + '/' + href.lstrip('/')
+            normalized_href = href.rstrip('/')
+            all_links.add(normalized_href)
+
+            if 'contact' in href.lower() or '問い合わせ' in href or 'コンタクト' in href or 'フォーム' in href or 'form' in href.lower():
+                contact_links.add(normalized_href)
+
+        # all_linksに含まれるすべてのリンクについても解析
+        for link in all_links:
+            try:
+                link_response = requests.get(link)
+                if link_response.status_code == 200:
+                    link_html_content = link_response.text
+                    link_soup = BeautifulSoup(link_html_content, 'html.parser')
+
+                    # 各遷移先の電話番号、メール、リンク情報を再度抽出して統合
+                    for match in phone_pattern.findall(link_soup.get_text()):
+                        phone_numbers.add(match)
+
+                    for match in email_pattern.findall(link_soup.get_text()):
+                        emails.add(match)
+
+                    # 遷移先のお問い合わせリンクも抽出
+                    for a_tag in link_soup.find_all('a', href=True):
+                        href = a_tag['href']
+                        if not href.startswith('http'):
+                            href = link.rstrip('/') + '/' + href.lstrip('/')
+                        normalized_href = href.rstrip('/')
+
+                        # 全リンクと同時に、お問い合わせリンクも抽出
+                        if 'contact' in href.lower() or '問い合わせ' in href or 'コンタクト' in href or 'フォーム' in href or 'form' in href.lower():
+                            contact_links.add(normalized_href)
+
+            except Exception as e:
+                logging.error(f"Error processing link {link}: {str(e)}")
 
         return {
             'phone_numbers': list(phone_numbers),
