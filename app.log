@@ -1,0 +1,93 @@
+2024-09-17 12:47:11,931 - DEBUG - Extracting information for URL: https://www.qsagri.co.jp/
+2024-09-17 12:47:11,932 - DEBUG - Fetching URL: https://www.qsagri.co.jp/
+2024-09-17 12:47:12,016 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,069 - DEBUG - https://www.qsagri.co.jp:443 "GET / HTTP/1.1" 200 None
+2024-09-17 12:47:12,069 - DEBUG - HTML content fetched from https://www.qsagri.co.jp/.
+2024-09-17 12:47:12,077 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/index.html
+2024-09-17 12:47:12,079 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,111 - DEBUG - https://www.qsagri.co.jp:443 "GET /index.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,118 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html
+2024-09-17 12:47:12,120 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,150 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,169 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/privacy.html
+2024-09-17 12:47:12,171 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,206 - DEBUG - https://www.qsagri.co.jp:443 "GET /privacy.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,215 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html#qs_bh1
+2024-09-17 12:47:12,217 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,250 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,279 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/corporate.html
+2024-09-17 12:47:12,281 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,320 - DEBUG - https://www.qsagri.co.jp:443 "GET /corporate.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,329 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html#qs_b3
+2024-09-17 12:47:12,330 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,361 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,380 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html#qs_ymc_e
+2024-09-17 12:47:12,382 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,414 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,432 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html#qs_b4
+2024-09-17 12:47:12,434 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,468 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,486 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html#qs_si
+2024-09-17 12:47:12,488 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,518 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,535 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/products.html#qs_bh2
+2024-09-17 12:47:12,537 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,571 - DEBUG - https://www.qsagri.co.jp:443 "GET /products.html HTTP/1.1" 200 None
+2024-09-17 12:47:12,589 - DEBUG - Fetching linked URL: https://www.qsagri.co.jp/news.html
+2024-09-17 12:47:12,590 - DEBUG - Starting new HTTPS connection (1): www.qsagri.co.jp:443
+2024-09-17 12:47:12,623 - DEBUG - https://www.qsagri.co.jp:443 "GET /news.html HTTP/1.1" 200 None
+2024-09-17 12:48:52,854 - DEBUG - Extracting information for URL: https://connect-world.co.jp
+2024-09-17 12:48:52,855 - DEBUG - Fetching URL: https://connect-world.co.jp
+2024-09-17 12:48:52,879 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:48:58,073 - DEBUG - https://connect-world.co.jp:443 "GET / HTTP/1.1" 200 None
+2024-09-17 12:48:58,075 - DEBUG - HTML content fetched from https://connect-world.co.jp.
+2024-09-17 12:48:58,110 - DEBUG - Fetching linked URL: https://connect-world.co.jp/data-sim
+2024-09-17 12:48:58,113 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:48:58,308 - DEBUG - https://connect-world.co.jp:443 "GET /data-sim HTTP/1.1" 301 0
+2024-09-17 12:48:58,598 - DEBUG - https://connect-world.co.jp:443 "GET /data-sim/ HTTP/1.1" 200 None
+2024-09-17 12:48:58,623 - DEBUG - Fetching linked URL: https://connect-world.co.jp/halal-scan
+2024-09-17 12:48:58,626 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:48:58,805 - DEBUG - https://connect-world.co.jp:443 "GET /halal-scan HTTP/1.1" 301 0
+2024-09-17 12:48:59,118 - DEBUG - https://connect-world.co.jp:443 "GET /halal-scan/ HTTP/1.1" 200 None
+2024-09-17 12:48:59,145 - DEBUG - Fetching linked URL: https://connect-world.co.jp/sample-page
+2024-09-17 12:48:59,148 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:48:59,334 - DEBUG - https://connect-world.co.jp:443 "GET /sample-page HTTP/1.1" 301 0
+2024-09-17 12:48:59,699 - DEBUG - https://connect-world.co.jp:443 "GET /sample-page/ HTTP/1.1" 200 None
+2024-09-17 12:48:59,722 - DEBUG - Fetching linked URL: https://connect-world.co.jp/podcasts
+2024-09-17 12:48:59,725 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:48:59,894 - DEBUG - https://connect-world.co.jp:443 "GET /podcasts HTTP/1.1" 301 0
+2024-09-17 12:49:00,210 - DEBUG - https://connect-world.co.jp:443 "GET /podcasts/ HTTP/1.1" 200 None
+2024-09-17 12:49:00,241 - DEBUG - Fetching linked URL: https://connect-world.co.jp/internet
+2024-09-17 12:49:00,244 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:00,415 - DEBUG - https://connect-world.co.jp:443 "GET /internet HTTP/1.1" 301 0
+2024-09-17 12:49:00,722 - DEBUG - https://connect-world.co.jp:443 "GET /internet/ HTTP/1.1" 200 None
+2024-09-17 12:49:00,748 - DEBUG - Fetching linked URL: https://connect-world.co.jp/sim-card
+2024-09-17 12:49:00,751 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:00,927 - DEBUG - https://connect-world.co.jp:443 "GET /sim-card HTTP/1.1" 301 0
+2024-09-17 12:49:01,243 - DEBUG - https://connect-world.co.jp:443 "GET /sim-card/ HTTP/1.1" 200 None
+2024-09-17 12:49:01,269 - DEBUG - Fetching linked URL: https://connect-world.co.jp/#content
+2024-09-17 12:49:01,272 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:01,747 - DEBUG - https://connect-world.co.jp:443 "GET / HTTP/1.1" 200 None
+2024-09-17 12:49:01,777 - DEBUG - Fetching linked URL: https://connect-world.co.jp/support-students
+2024-09-17 12:49:01,780 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:02,002 - DEBUG - https://connect-world.co.jp:443 "GET /support-students HTTP/1.1" 301 0
+2024-09-17 12:49:02,463 - DEBUG - https://connect-world.co.jp:443 "GET /support-students/ HTTP/1.1" 200 None
+2024-09-17 12:49:02,486 - DEBUG - Fetching linked URL: https://connect-world.co.jp
+2024-09-17 12:49:02,488 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:02,978 - DEBUG - https://connect-world.co.jp:443 "GET / HTTP/1.1" 200 None
+2024-09-17 12:49:03,011 - DEBUG - Fetching linked URL: https://connect-world.co.jp/hasu-life
+2024-09-17 12:49:03,014 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:03,274 - DEBUG - https://connect-world.co.jp:443 "GET /hasu-life HTTP/1.1" 301 0
+2024-09-17 12:49:03,589 - DEBUG - https://connect-world.co.jp:443 "GET /hasu-life/ HTTP/1.1" 200 None
+2024-09-17 12:49:03,612 - DEBUG - Fetching linked URL: https://connect-world.co.jp/#
+2024-09-17 12:49:03,615 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:03,934 - DEBUG - https://connect-world.co.jp:443 "GET / HTTP/1.1" 200 None
+2024-09-17 12:49:03,965 - DEBUG - Fetching linked URL: https://connect-world.co.jp/contact
+2024-09-17 12:49:03,968 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:04,156 - DEBUG - https://connect-world.co.jp:443 "GET /contact HTTP/1.1" 301 0
+2024-09-17 12:49:04,436 - DEBUG - https://connect-world.co.jp:443 "GET /contact/ HTTP/1.1" 200 None
+2024-09-17 12:49:04,456 - DEBUG - Fetching linked URL: https://connect-world.co.jp/about-2
+2024-09-17 12:49:04,459 - DEBUG - Starting new HTTPS connection (1): connect-world.co.jp:443
+2024-09-17 12:49:04,647 - DEBUG - https://connect-world.co.jp:443 "GET /about-2 HTTP/1.1" 301 0
+2024-09-17 12:49:05,027 - DEBUG - https://connect-world.co.jp:443 "GET /about-2/ HTTP/1.1" 200 None
+2024-09-17 12:49:05,058 - DEBUG - Extracting information for URL: https://connect-world.co.jp

@@ -22,12 +22,8 @@ client = gspread.authorize(creds)
 # 環境変数に基づいて設定を分ける
 environment = os.getenv('ENVIRONMENT', 'local')
 
-###############################################テスト################################################
-
 # ロガーの設定
-# logging.basicConfig(level=logging.DEBUG, filename='html_output.log', filemode='w')
-
-####################################################################################################
+logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 # トップページの表示ルート
@@ -39,10 +35,12 @@ def index():
 @lru_cache(maxsize=100)
 def extract_contact_info(url):
     try:
+        logging.debug(f"Fetching URL: {url}")
 
         # レスポンスエラーの場合は連絡先は全て空として返却
         response = requests.get(url)
         if response.status_code != 200:
+            logging.warning(f"Failed to fetch URL: {url} with status code: {response.status_code}")
             return {
                 'phone_numbers': [],
                 'emails': [],
@@ -51,6 +49,7 @@ def extract_contact_info(url):
         
         # HTML解析する前にHTMLを出力
         html_content = response.text
+        logging.debug(f"HTML content fetched from {url}.")
         
         ###############################################テスト################################################
 
@@ -100,7 +99,7 @@ def extract_contact_info(url):
         # all_linksに含まれるすべてのリンクについても解析
         for link in all_links:
             try:
-                print(link)
+                logging.debug(f"Fetching linked URL: {link}")
                 link_response = requests.get(link)
                 if link_response.status_code == 200:
                     link_html_content = link_response.text
@@ -125,6 +124,7 @@ def extract_contact_info(url):
                             contact_links.add(normalized_href)
 
             except Exception as e:
+                logging.error(f"Error processing link {link}: {str(e)}")
                 if environment == 'production':
                     print("----exception---")
                     return {
@@ -132,8 +132,6 @@ def extract_contact_info(url):
                         'emails': [],
                         'contact_links': []
                     }
-                else:
-                    logging.error(f"Error processing link {link}: {str(e)}")
 
         return {
             'phone_numbers': list(phone_numbers),
@@ -142,6 +140,7 @@ def extract_contact_info(url):
         }
     
     except Exception as e:
+        logging.error(f"Error extracting contact info from {url}: {str(e)}")
         if environment == 'production':
             print("----exception---")
             return {
@@ -149,8 +148,6 @@ def extract_contact_info(url):
                 'emails': [],
                 'contact_links': []
             }
-        else:
-            return {'error': str(e)}
 
 
 # APIエンドポイント（フォーム入力押下時/URL押下時）
@@ -165,6 +162,7 @@ def extract_info():
         return {'error': 'Parameter "company_url" is required.'}
     
     # 連絡先の検索
+    logging.debug(f"Extracting information for URL: {url}")
     result = extract_contact_info(url)
 
     # JSON形式で返却
@@ -192,6 +190,7 @@ def update_spreadsheet():
 
             # URL形式かどうかを確認
             if not (url.startswith("http://") or url.startswith("https://")):
+                logging.warning(f"Invalid URL format: {url}")
                 # URLではない場合は、BCD列に全角の「ー」を出力
                 sheet.update_cell(index, 2, 'ー')  # B列
                 sheet.update_cell(index, 3, 'ー')  # C列
@@ -217,17 +216,19 @@ def update_spreadsheet():
             else:
                 sheet.update_cell(index, 4, ', '.join(info['contact_links']))  # D列
 
-
         return json.dumps({"success": "スプレッドシートが更新されました。"}, ensure_ascii=False, indent=4)
 
     # エラーハンドリング
     except gspread.SpreadsheetNotFound:
+        logging.error("Spreadsheet not found.")
         response.status = 404
         return json.dumps({"error": "スプレッドシートが見つかりません。"}, ensure_ascii=False, indent=4)
     except gspread.APIError as e:
+        logging.error(f"Google Sheets API error: {str(e)}")
         response.status = 500
         return json.dumps({"error": f"Google Sheets APIエラー: {str(e)}"}, ensure_ascii=False, indent=4)
     except Exception as e:
+        logging.error(f"Error updating spreadsheet: {str(e)}")
         response.status = 500
         return json.dumps({"error": str(e)}, ensure_ascii=False, indent=4)
 
