@@ -1,13 +1,14 @@
+from urllib.parse import urlparse
 from bottle import Bottle, request, response, static_file
 import requests
 import gspread
 from bs4 import BeautifulSoup
-from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re
 import os
 from credentials import get_credentials
 import logging
+from functools import lru_cache
 
 app = Bottle()
 
@@ -16,11 +17,17 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 
 # Google Sheets API認証設定
 creds = get_credentials()
-
 client = gspread.authorize(creds)
+
+# 環境変数に基づいて設定を分ける
+environment = os.getenv('ENVIRONMENT', 'local')
+
+###############################################テスト################################################
 
 # ロガーの設定
 # logging.basicConfig(level=logging.DEBUG, filename='html_output.log', filemode='w')
+
+####################################################################################################
 
 
 # トップページの表示ルート
@@ -29,6 +36,7 @@ def index():
     return static_file('index.html', root='.')
 
 # URLから情報を取得する関数(フォーム入力/URL/スプレッドシート全て共通の処理)
+@lru_cache(maxsize=100)
 def extract_contact_info(url):
     try:
 
@@ -44,6 +52,8 @@ def extract_contact_info(url):
         # HTML解析する前にHTMLを出力
         html_content = response.text
         
+        ###############################################テスト################################################
+
         # 解析対象のHTMLの最初の1000文字をログに出力
         # logging.debug(f"HTML content from {url}:\n{html_content[:]}") 
         
@@ -51,8 +61,13 @@ def extract_contact_info(url):
         # with open('output.html', 'w', encoding='utf-8') as file:
         #     file.write(html_content)        
 
+        ####################################################################################################
+
         # HTML解析する
         soup = BeautifulSoup(html_content, 'html.parser')
+
+        # メインURLのドメインを取得
+        main_domain = urlparse(url).netloc
 
         # 電話番号、メールアドレス、お問い合わせリンクの抽出
         phone_numbers = set()
@@ -76,7 +91,8 @@ def extract_contact_info(url):
             if not href.startswith('http'):
                 href = url.rstrip('/') + '/' + href.lstrip('/')
             normalized_href = href.rstrip('/')
-            all_links.add(normalized_href)
+            if main_domain == urlparse(normalized_href).netloc and not normalized_href.lower().endswith('.pdf'):
+                all_links.add(normalized_href)
 
             if 'contact' in href.lower() or '問い合わせ' in href or 'コンタクト' in href or 'フォーム' in href or 'form' in href.lower():
                 contact_links.add(normalized_href)
@@ -84,6 +100,7 @@ def extract_contact_info(url):
         # all_linksに含まれるすべてのリンクについても解析
         for link in all_links:
             try:
+                print(link)
                 link_response = requests.get(link)
                 if link_response.status_code == 200:
                     link_html_content = link_response.text
@@ -108,7 +125,15 @@ def extract_contact_info(url):
                             contact_links.add(normalized_href)
 
             except Exception as e:
-                logging.error(f"Error processing link {link}: {str(e)}")
+                if environment == 'production':
+                    print("----exception---")
+                    return {
+                        'phone_numbers': [],
+                        'emails': [],
+                        'contact_links': []
+                    }
+                else:
+                    logging.error(f"Error processing link {link}: {str(e)}")
 
         return {
             'phone_numbers': list(phone_numbers),
@@ -117,16 +142,16 @@ def extract_contact_info(url):
         }
     
     except Exception as e:
-        return {'error': str(e)}
+        if environment == 'production':
+            print("----exception---")
+            return {
+                'phone_numbers': [],
+                'emails': [],
+                'contact_links': []
+            }
+        else:
+            return {'error': str(e)}
 
-    # 例外時も全て空として返却
-    # except Exception:
-    #     print("----exception---")
-    #     return {
-    #         'phone_numbers': [],
-    #         'emails': [],
-    #         'contact_links': []
-    #     }
 
 # APIエンドポイント（フォーム入力押下時/URL押下時）
 @app.route('/extract', method='GET')
