@@ -183,6 +183,14 @@ def update_spreadsheet():
     # 読み込んだスプレッドシートのA列＝会社URL（1行目はヘッダー）
     try:
         sheet = client.open_by_key(spreadsheet_id).sheet1
+
+        # ヘッダーの追加
+        header = ['URL', '電話番号', 'メールアドレス', 'お問い合わせリンク']
+        existing_headers = sheet.row_values(1)
+        
+        if existing_headers != header:
+            sheet.insert_row(header, 1)
+
         urls = sheet.col_values(1)[1:]  
         
         # B列、C列、D列を更新するために2から始める
