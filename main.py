@@ -24,8 +24,8 @@ client = gspread.authorize(creds)
 # 環境変数に基づいて設定を分ける
 environment = os.getenv('ENVIRONMENT', 'local')
 
-# ロガーの設定
-logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
+# # ロガーの設定
+# logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 # トップページの表示ルート
 @app.route('/')
@@ -37,13 +37,11 @@ def index():
 @lru_cache(maxsize=100)
 def extract_contact_info(url):
     try:
-        print("start")
-
         # レスポンスエラーの場合は連絡先は全て空として返却
         response = requests.get(url)
         if response.status_code != 200:
             return {
-
+                'error':['200 Error'],
                 'phone_numbers': [],
                 'emails': [],
                 'contact_links': []
@@ -131,7 +129,7 @@ def extract_contact_info(url):
                 else:
                     continue
             except requests.RequestException as e:
-                logging.error(f"Error fetching URL {normalized_href}: {str(e)}")
+                # logging.error(f"Error fetching URL {normalized_href}: {str(e)}")
                 continue
 
             # フィルタリング -yahoo.co.jpなどSNSを除外 -PDFファイルを除外 -リクエストエラーを除外
@@ -192,17 +190,13 @@ def extract_contact_info(url):
                                         contact_links.add(normalized_href)
                                 
             except Exception as e:
-                logging.error(f"Error processing link {link}: {str(e)}")
-                print(e)
-
+                # logging.error(f"Error processing link {link}: {str(e)}")
                 return {
                     'error': [str(e)],
                     'phone_numbers': [],
                     'emails': [],
                     'contact_links': []
-                }
-        
-        print("end")
+                },500
 
         return {
             'phone_numbers': list(phone_numbers),
@@ -211,15 +205,13 @@ def extract_contact_info(url):
         }
     
     except Exception as e:
-        print(e)
-        logging.error(f"Error extracting contact info from {url}: {str(e)}")
-
+        # logging.error(f"Error extracting contact info from {url}: {str(e)}")
         return {
             'error': [str(e)],
             'phone_numbers': [],
             'emails': [],
             'contact_links': []
-        }
+        },500
 
 
 # APIエンドポイント（フォーム入力押下時/URL押下時）
@@ -234,7 +226,7 @@ def extract_info():
         return {'error': 'Parameter "company_url" is required.'}
     
     # 連絡先の検索
-    logging.debug(f"Extracting information for URL: {url}")
+    # logging.debug(f"Extracting information for URL: {url}")
     result = extract_contact_info(url)
 
     # JSON形式で返却
@@ -270,7 +262,7 @@ def update_spreadsheet():
 
             # URL形式かどうかを確認
             if not (url.startswith("http://") or url.startswith("https://")):
-                logging.warning(f"Invalid URL format: {url}")
+                # logging.warning(f"Invalid URL format: {url}")
 
                 # URLではない場合は、BCD列に全角の「ー」を出力
                 sheet.update_cell(index, 2, 'ー')  # B列
@@ -301,15 +293,15 @@ def update_spreadsheet():
 
     # エラーハンドリング
     except gspread.SpreadsheetNotFound:
-        logging.error("Spreadsheet not found.")
+        # logging.error("Spreadsheet not found.")
         response.status = 404
         return json.dumps({"error": "スプレッドシートが見つかりません。"}, ensure_ascii=False, indent=4)
     except gspread.APIError as e:
-        logging.error(f"Google Sheets API error: {str(e)}")
+        # logging.error(f"Google Sheets API error: {str(e)}")
         response.status = 500
         return json.dumps({"error": f"Google Sheets APIエラー: {str(e)}"}, ensure_ascii=False, indent=4)
     except Exception as e:
-        logging.error(f"Error updating spreadsheet: {str(e)}")
+        # logging.error(f"Error updating spreadsheet: {str(e)}")
         response.status = 500
         return json.dumps({"error": str(e)}, ensure_ascii=False, indent=4)
 
