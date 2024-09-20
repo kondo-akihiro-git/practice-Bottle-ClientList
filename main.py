@@ -24,8 +24,8 @@ client = gspread.authorize(creds)
 # 環境変数に基づいて設定を分ける
 environment = os.getenv('ENVIRONMENT', 'local')
 
-# # ロガーの設定
-# logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
+# ロガーの設定
+logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 # トップページの表示ルート
 @app.route('/')
@@ -43,6 +43,7 @@ def extract_contact_info(url):
         response = requests.get(url)
         if response.status_code != 200:
             return {
+
                 'phone_numbers': [],
                 'emails': [],
                 'contact_links': []
@@ -193,14 +194,14 @@ def extract_contact_info(url):
             except Exception as e:
                 logging.error(f"Error processing link {link}: {str(e)}")
                 print(e)
-                if environment == 'production':
-                    return {
-                        'error': [str(e)],
-                        'phone_numbers': [],
-                        'emails': [],
-                        'contact_links': []
-                    }
-            
+
+                return {
+                    'error': [str(e)],
+                    'phone_numbers': [],
+                    'emails': [],
+                    'contact_links': []
+                }
+        
         print("end")
 
         return {
@@ -212,13 +213,13 @@ def extract_contact_info(url):
     except Exception as e:
         print(e)
         logging.error(f"Error extracting contact info from {url}: {str(e)}")
-        if environment == 'production':
-            return {
-                'error': [str(e)],
-                'phone_numbers': [],
-                'emails': [],
-                'contact_links': []
-            }
+
+        return {
+            'error': [str(e)],
+            'phone_numbers': [],
+            'emails': [],
+            'contact_links': []
+        }
 
 
 # APIエンドポイント（フォーム入力押下時/URL押下時）
