@@ -108,8 +108,6 @@ def extract_contact_info(url):
 
         # 全リンクの抽出
         a_tags = soup.find_all('a', href=lambda href: is_valid_and_unique_href(href))
-        print(a_tags)
-        print(f"メインURLから見つかったaタグの量{len(a_tags)}")
         for a_tag in a_tags:
             href = a_tag['href']
 
@@ -142,7 +140,6 @@ def extract_contact_info(url):
                 all_links.add(normalized_href)
 
         len_all=len(all_links)
-        print(f"メインURLから調査したこれから解析予定のリンク量 : {len_all}")
 
         # 全リンク解析
         for link in all_links:
@@ -161,7 +158,6 @@ def extract_contact_info(url):
                     a_tags = link_soup.find_all('a', href=lambda href: href is not None and any(keyword in href for keyword in contact_paths))
                     if a_tags is not None and len(a_tags) > 0:
 
-                        print(f"サブURLから見つかったaタグの量 :{len(a_tags)}")
                         for a_tag in a_tags:
                             href = a_tag['href']
 
