@@ -9,6 +9,8 @@ import os
 from credentials import get_credentials
 import logging
 from functools import lru_cache
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 app = Bottle()
 
@@ -22,116 +24,183 @@ client = gspread.authorize(creds)
 # 環境変数に基づいて設定を分ける
 environment = os.getenv('ENVIRONMENT', 'local')
 
-# ロガーの設定
-logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
-
+# # ロガーの設定
+# logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 # トップページの表示ルート
 @app.route('/')
 def index():
     return static_file('index.html', root='.')
 
+
 # URLから情報を取得する関数(フォーム入力/URL/スプレッドシート全て共通の処理)
 @lru_cache(maxsize=100)
 def extract_contact_info(url):
     try:
-        logging.debug(f"Fetching URL: {url}")
+        print("start")
 
         # レスポンスエラーの場合は連絡先は全て空として返却
         response = requests.get(url)
         if response.status_code != 200:
-            logging.warning(f"Failed to fetch URL: {url} with status code: {response.status_code}")
             return {
                 'phone_numbers': [],
                 'emails': [],
                 'contact_links': []
             }
         
-        # HTML解析する前にHTMLを出力
-        html_content = response.text
-        logging.debug(f"HTML content fetched from {url}.")
-        
-        ###############################################テスト################################################
-
-        # 解析対象のHTMLの最初の1000文字をログに出力
-        # logging.debug(f"HTML content from {url}:\n{html_content[:]}") 
-        
-        # HTMLをファイルに保存（必要に応じて）
-        # with open('output.html', 'w', encoding='utf-8') as file:
-        #     file.write(html_content)        
-
-        ####################################################################################################
-
         # HTML解析する
-        soup = BeautifulSoup(html_content, 'html.parser')
+        html_content = response.text
+        soup = BeautifulSoup(html_content, 'lxml')
 
         # メインURLのドメインを取得
         main_domain = urlparse(url).netloc
 
-        # 電話番号、メールアドレス、お問い合わせリンクの抽出
-        phone_numbers = set()
-        emails = set()
-        contact_links = set()
-
         # 電話番号を正規表現で抽出
+
         phone_pattern = re.compile(r'\+?\d[\d -]{8,}\d')
-        for match in phone_pattern.findall(soup.get_text()):
-            phone_numbers.add(match)
+        phone_numbers=set()
+        phone_numbers.update(phone_pattern.findall(soup.get_text()))
 
         # メールアドレスを正規表現で抽出
         email_pattern = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
-        for match in email_pattern.findall(soup.get_text()):
-            emails.add(match)
+        emails=set()
+        emails.update(email_pattern.findall(soup.get_text()))
 
-        # お問い合わせリンクを抽出
+        # お問い合わせリンクの抽出用変数
         all_links = set() 
-        for a_tag in soup.find_all('a', href=True):
+        contact_links = set()
+        form_pattern = 'forms.gle' 
+        unnatural_pattern = re.compile(r'(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,}')
+        def is_valid_url(url):
+            return not ('error' in url or '404' in url)  or unnatural_pattern.search(url)
+
+        # お問い合わせリンクの抽出
+        contact_paths = [
+            '/contact',
+            '/問い合わせ',
+            '/お問い合わせ',
+            '/コンタクト',
+            '/フォーム',
+            '/form'
+        ]
+
+        # 相対パスの場合は/contactを返す/絶対パスの場合はhttps://？/contactにメインドメインが含まれているのか確認する   
+        unnatural_link_patterns = {'mailto:', 'tel:', 'ftp:', 'file:', 'data:'}
+        def is_valid_href(href):
+            if href is not None:
+                parsed_href = urlparse(href)
+            if href is not None and form_pattern in parsed_href.netloc and any(pattern not in href.lower() for pattern in unnatural_link_patterns):
+                return True
+            if href is None or href.lower().endswith('.pdf') or not is_valid_url(href.lower()) or any(pattern in href.lower() for pattern in unnatural_link_patterns) :
+                return False
+            if parsed_href.netloc == '' or form_pattern in parsed_href.netloc:
+                return True
+            return main_domain in parsed_href.netloc
+
+        seen_links = set()
+        def is_unique_href(href):
+            if href in seen_links:
+                return False
+            seen_links.add(href)
+            return True
+
+        def is_valid_and_unique_href(href):
+            return is_valid_href(href) and is_unique_href(href)
+
+        # 全リンクの抽出
+        a_tags = soup.find_all('a', href=lambda href: is_valid_and_unique_href(href))
+        print(a_tags)
+        print(f"メインURLから見つかったaタグの量{len(a_tags)}")
+        for a_tag in a_tags:
             href = a_tag['href']
+
+            if form_pattern in href:
+                contact_links.add(href)
+
+            # リンクが/contactのみのパターンもあるため繋ぎ合わせでリンクを作成
             if not href.startswith('http'):
                 href = url.rstrip('/') + '/' + href.lstrip('/')
             normalized_href = href.rstrip('/')
-            if main_domain == urlparse(normalized_href).netloc and not normalized_href.lower().endswith('.pdf'):
+
+            # 作成したリンクが適切ではない場合に備えてリダイレクトでチェック
+            try:
+                response = requests.get(normalized_href)
+                if response.status_code == 200:
+                    normalized_href = response.url 
+                else:
+                    continue
+            except requests.RequestException as e:
+                logging.error(f"Error fetching URL {normalized_href}: {str(e)}")
+                continue
+
+            # フィルタリング -yahoo.co.jpなどSNSを除外 -PDFファイルを除外 -リクエストエラーを除外
+            if normalized_href is not None and main_domain in normalized_href and not normalized_href.lower().endswith('.pdf') and is_valid_url(normalized_href.lower()) and any(pattern not in normalized_href.lower() for pattern in unnatural_link_patterns):  
+                for path in contact_paths:
+                    if path in normalized_href:
+                        print(normalized_href)
+                        contact_links.add(normalized_href)
+
                 all_links.add(normalized_href)
 
-            if 'contact' in href.lower() or '問い合わせ' in href or 'コンタクト' in href or 'フォーム' in href or 'form' in href.lower():
-                contact_links.add(normalized_href)
+        len_all=len(all_links)
+        print(f"メインURLから調査したこれから解析予定のリンク量 : {len_all}")
 
-        # all_linksに含まれるすべてのリンクについても解析
+        # 全リンク解析
         for link in all_links:
             try:
-                logging.debug(f"Fetching linked URL: {link}")
+                print(f"サブURL検索開始: {link}")
                 link_response = requests.get(link)
                 if link_response.status_code == 200:
                     link_html_content = link_response.text
-                    link_soup = BeautifulSoup(link_html_content, 'html.parser')
+                    link_soup = BeautifulSoup(link_html_content, 'lxml')
 
-                    # 各遷移先の電話番号、メール、リンク情報を再度抽出して統合
-                    for match in phone_pattern.findall(link_soup.get_text()):
-                        phone_numbers.add(match)
-
-                    for match in email_pattern.findall(link_soup.get_text()):
-                        emails.add(match)
+                    # 電話番号、メールを再度抽出して統合
+                    phone_numbers.update(phone_pattern.findall(link_soup.get_text()))
+                    emails.update(email_pattern.findall(link_soup.get_text()))
 
                     # 遷移先のお問い合わせリンクも抽出
-                    for a_tag in link_soup.find_all('a', href=True):
-                        href = a_tag['href']
-                        if not href.startswith('http'):
-                            href = link.rstrip('/') + '/' + href.lstrip('/')
-                        normalized_href = href.rstrip('/')
+                    a_tags = link_soup.find_all('a', href=lambda href: href is not None and any(keyword in href for keyword in contact_paths))
+                    if a_tags is not None and len(a_tags) > 0:
 
-                        # 全リンクと同時に、お問い合わせリンクも抽出
-                        if 'contact' in href.lower() or '問い合わせ' in href or 'コンタクト' in href or 'フォーム' in href or 'form' in href.lower():
-                            contact_links.add(normalized_href)
+                        print(f"サブURLから見つかったaタグの量 :{len(a_tags)}")
+                        for a_tag in a_tags:
+                            href = a_tag['href']
 
+                            if 'forms.gle' in href:
+                                contact_links.add(href)
+
+                            # リンクが/contactのみのパターンもあるため繋ぎ合わせでリンクを作成
+                            if not href.startswith('http'):
+                                href = link.rstrip('/') + '/' + href.lstrip('/')
+                            normalized_href = href.rstrip('/')
+
+                            # 作成したリンクが適切ではない場合に備えてリダイレクトでチェック
+                            try:
+                                response = requests.get(normalized_href)
+                                if response.status_code == 200:
+                                    normalized_href = response.url  # リダイレクト後のURLに更新
+                                else:
+                                    continue
+                            except requests.RequestException as e:
+                                continue
+                            
+                            # フィルタリング -yahoo.co.jpなどSNSを除外 -PDFファイルを除外 -リクエストエラーを除外
+                            if normalized_href is not None and main_domain in normalized_href and not normalized_href.lower().endswith('.pdf') and is_valid_url(normalized_href.lower()) and not any(pattern not in normalized_href.lower() for pattern in unnatural_link_patterns):  
+                                for path in contact_paths:
+                                    if path in normalized_href:
+                                        contact_links.add(normalized_href)
+                                
             except Exception as e:
                 logging.error(f"Error processing link {link}: {str(e)}")
+                print(e)
                 if environment == 'production':
-                    print("----exception---")
                     return {
                         'phone_numbers': [],
                         'emails': [],
                         'contact_links': []
                     }
+            
+        print("end")
 
         return {
             'phone_numbers': list(phone_numbers),
@@ -140,9 +209,9 @@ def extract_contact_info(url):
         }
     
     except Exception as e:
+        print(e)
         logging.error(f"Error extracting contact info from {url}: {str(e)}")
         if environment == 'production':
-            print("----exception---")
             return {
                 'phone_numbers': [],
                 'emails': [],
@@ -199,6 +268,7 @@ def update_spreadsheet():
             # URL形式かどうかを確認
             if not (url.startswith("http://") or url.startswith("https://")):
                 logging.warning(f"Invalid URL format: {url}")
+
                 # URLではない場合は、BCD列に全角の「ー」を出力
                 sheet.update_cell(index, 2, 'ー')  # B列
                 sheet.update_cell(index, 3, 'ー')  # C列
