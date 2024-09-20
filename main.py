@@ -195,6 +195,7 @@ def extract_contact_info(url):
                 print(e)
                 if environment == 'production':
                     return {
+                        'error': [str(e)],
                         'phone_numbers': [],
                         'emails': [],
                         'contact_links': []
@@ -213,6 +214,7 @@ def extract_contact_info(url):
         logging.error(f"Error extracting contact info from {url}: {str(e)}")
         if environment == 'production':
             return {
+                'error': [str(e)],
                 'phone_numbers': [],
                 'emails': [],
                 'contact_links': []
