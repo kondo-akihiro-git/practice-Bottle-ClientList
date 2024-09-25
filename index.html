@@ -5,11 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>会社情報スクレイピングAPI</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.23.1/antd.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/4.23.1/antd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
 
     <style>
         body {
@@ -59,7 +62,30 @@
         }
 
         .spacer {
-            padding: 1.5rem;
+            padding: 2rem;
+        }
+
+        .spacer-small {
+            padding: 1rem;
+        }
+
+        /* タイトルの左右に線を追加するスタイル */
+        .lined-title {
+            display: flex;
+            align-items: center;
+            text-align: center;
+        }
+
+        .lined-title::before,
+        .lined-title::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ccc;
+            margin: 0 15px;
+        }
+
+        .lined-title span {
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -76,15 +102,15 @@
         <div class="spacer"></div>
 
         <!-- フォーム入力 -->
-        <h2>フォーム入力</h2>
+        <h2 class="lined-title"><span>フォーム入力</span></h2>
         <p>以下に会社のホームページURLを入力することで、会社の電話番号/メールアドレス/お問い合わせリンクを取得できます。</p>
         <form id="companyForm">
             <input type="url" id="companyUrl" placeholder="会社のホームページURL"
                 style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" required
-                pattern="https?://.+" />
+                pattern="https?://.+" autocomplete="off"/>
             <button type="submit" class="ant-btn ant-btn-primary" style="margin-top: 10px;">連絡先を検索する</button>
         </form>
-    <pre id="form_pre" style="display: none;">
+        <pre id="form_pre" style="display: none;">
         <div id="form_results" style="margin-top: 20px;">
         </div>
         <div id="executionTime" style="margin-top: 20px; font-weight: bold;">
@@ -94,7 +120,7 @@
         <div class="spacer"></div>
 
         <!-- スプレッドシート更新 -->
-        <h2>スプレッドシート更新</h2>
+        <h2 class="lined-title"><span>スプレッドシート更新</span></h2>
         <p>以下の手順でスプレッドシートを設定することで、スプレッドシートの読取/更新ができます。</p>
         <ol>
             <li><strong>新しいスプレッドシートの作成</strong><br>
@@ -111,10 +137,10 @@ https://docs.google.com/spreadsheets/d/{スプレッドシートID}/edit?gid=0#g
                 以下にスプレッドシートIDを入力することで、スプレッドシートのB列に電話番号/C列にメールアドレス/D列にお問い合わせリンクが出力されます。</li>
         </ol>
 
-        <form id="spreadsheetForm" >
+        <form id="spreadsheetForm">
             <input type="text" id="spreadsheetId" placeholder="スプレッドシートID"
                 style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" required
-                pattern="[a-zA-Z0-9_-]+" />
+                pattern="[a-zA-Z0-9\-_]{1,}" autocomplete="off"/>
             <button type="submit" class="ant-btn ant-btn-primary"
                 style="margin-top: 10px;">連絡先を検索、スプレッドシートを更新する</button>
         </form>
@@ -125,47 +151,103 @@ https://docs.google.com/spreadsheets/d/{スプレッドシートID}/edit?gid=0#g
         <div class="spacer"></div>
 
         <!-- URLからのJSONデータ取得 -->
-        <h2>URLからのJSONデータ取得</h2>
-        <p>次のURLに会社のホームページURLをクエリパラメータとして追加してください。</p>
-        <pre><p>
+        <h2 class="lined-title"><span>URLからのJSONデータ取得</span></h2>
+        <ol>
+            <li><strong>バックグラウンドでのデータ検索</strong><br>
+                <p>次のURLに会社のホームページURLをクエリパラメータとして追加してください。　※｛　｝を除く</p>
+                <pre><p>
 GET https://clientinfo.vercel.app/extract?company_url={会社のHPのURL}
 </p></pre>
-        <p>例えば、<code>https://connect-world.co.jp/</code>を指定する場合は以下のようになります。</p>
-        <pre><p>
-GET https://clientinfo.vercel.app/extract?company_url=https://ebacorp.jp/
-</p></pre>
-        <p>APIは以下のようなJSONデータを返します。</p>
-        <pre>
+
+                <p>以下のようなタスクIDをJSON形式で返します。</p>
+                <pre>
             <p>
 {
-    "phone_numbers": [
-        "03-5909-0716",
-        "03-5778-4829"
-    ],
-    "emails": [],
-    "contact_links": [
-        "https://ebacorp.jp/form",
-        "https://ebacorp.jp/form/"
+    "task_id": [
+        "6af4c4f6-a4e3-4e3c-9fd9-8b5d7a0a4a1a"
     ]
 }
 </p>
         </pre>
+            <li><strong>バックグラウンドからデータを取得</strong><br>
+                <p>取得したタスクIDを以下の形式でパラメータとして入力してください。</p>
+                <pre><p>
+GET https://clientinfo.vercel.app/task_result/{タスクID}
+</p></pre>
 
-        <button class="ant-btn ant-btn-primary"
-            onclick="window.open('https://clientinfo.vercel.app//extract?company_url=https://ebacorp.jp/', '_blank')">
-            別タブで試す
-        </button>
+                <p>以下のような連絡先をJSON形式で返します。</p>
+                <pre>
+            <p>
+{
+    "phone_numbers": [
+        "03-1234-5678",
+        "03-1234-6789"
+    ],
+    "emails": [
+        "company@co.jp"
+    ],
+    "contact_links": [
+        "https://company.jp/form",
+        "https://company.jp/contact/"
+    ]
+}
+</p>
+        </pre>
+        </ol>
+
+        <div class="spacer-small"></div>
+
+        <p>会社URLを入力して以下のボタンを押下すると、バックグラウンドでデータの検索を開始します。</p>
+        <input type="url" id="companyUrl_background" placeholder="会社のホームページURL"
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" required />
+        <button class="ant-btn ant-btn-primary" onclick="getSearchResult()">データを検索する</button>
+
+        <div class="spacer-small"></div>
+
+        <p>タスクIDを入力して以下のボタンを押下すると、バックグラウンドからJSON形式でデータを取得できます。
+            <br>※ 検索中は PENDING が表示されます。
+
+        </p>
+        <input type="text" id="taskId" placeholder="タスクIDを入力"
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" required />
+        <button class="ant-btn ant-btn-primary" onclick="getTaskResult()">データを取得する</button>
+        <div class="spacer-small"></div>
     </div>
+    <div class="spacer-small"></div>
 
-    <div class="spacer"></div>
+
 
     <script>
+
+        
+        // 会社ホームページURL入力フィールドに対する処理
+        document.getElementById('companyUrl').addEventListener('input', function (event) {
+            const url = event.target.value;
+            if (url && typeof url === 'string') {
+                // 正しい値が入力されている場合、処理を続行
+                console.log('Company URL: ', url);
+            } else {
+                console.error('Company URL is undefined or invalid');
+            }
+        });
+
+        // スプレッドシートID入力フィールドに対する処理
+        document.getElementById('spreadsheetId').addEventListener('input', function (event) {
+            const sheetId = event.target.value;
+            if (sheetId && typeof sheetId === 'string') {
+                // 正しい値が入力されている場合、処理を続行
+                console.log('Spreadsheet ID: ', sheetId);
+            } else {
+                console.error('Spreadsheet ID is undefined or invalid');
+            }
+        });
+
         function showNotification(message, type = 'success') {
             toastr[type](message, '', {
                 closeButton: true,
                 progressBar: false,
                 positionClass: 'toast-top-left',
-                timeOut:6000,
+                timeOut: 10000,
                 extendedTimeOut: 2000
             });
         }
@@ -173,6 +255,8 @@ GET https://clientinfo.vercel.app/extract?company_url=https://ebacorp.jp/
         // 直接URLをinputするパターン
         document.getElementById('companyForm').addEventListener('submit', function (event) {
             event.preventDefault();
+
+            showNotification("データ検索を開始しました。");
 
             const url = document.getElementById('companyUrl').value;
 
@@ -182,52 +266,68 @@ GET https://clientinfo.vercel.app/extract?company_url=https://ebacorp.jp/
             fetch(`/extract?company_url=${encodeURIComponent(url)}`)
                 .then(response => response.json())
                 .then(data => {
-
-                    const endTime = Date.now(); // 処理終了時刻
-                    const elapsedTime = ((endTime - startTime) / 1000).toFixed(2);
-
-                    let resultHTML = '';
                     if (data.error) {
-                        resultHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
-                    } else if ((!data.phone_numbers || data.phone_numbers.length === 0) &&
-                        (!data.emails || data.emails.length === 0) &&
-                        (!data.contact_links || data.contact_links.length === 0)) {
-                        // 取得データがすべて空の場合の処理
-                        resultHTML = `<p>データを取得できませんでした。</p>`;
-                    } else {
-                        // 電話番号が取得できなかった場合
-                        if (!data.phone_numbers || data.phone_numbers.length === 0) {
-                            resultHTML += `<h4>電話番号</h4><ul><li>データを取得できませんでした。</li></ul>`;
-                        } else {
-                            resultHTML += `<h4>電話番号</h4><ul>${data.phone_numbers.map(num => `<li>${num}</li>`).join('')}</ul>`;
-                        }
-
-                        // メールアドレスが取得できなかった場合
-                        if (!data.emails || data.emails.length === 0) {
-                            resultHTML += `<h4>メールアドレス</h4><ul><li>データを取得できませんでした。</li></ul>`;
-                        } else {
-                            resultHTML += `<h4>メールアドレス</h4><ul>${data.emails.map(email => `<li>${email}</li>`).join('')}</ul>`;
-                        }
-
-                        // お問い合わせリンクが取得できなかった場合
-                        if (!data.contact_links || data.contact_links.length === 0) {
-                            resultHTML += `<h4>お問い合わせリンク</h4><ul><li>データを取得できませんでした。</li></ul>`;
-                        } else {
-                            resultHTML += `<h4>お問い合わせリンク</h4><ul>${data.contact_links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}</ul>`;
-                        }
+                        throw new Error(data.error);
                     }
-                    resultHTML += `<p>実行時間: ${elapsedTime}秒</p>`;
-                    document.getElementById('form_results').innerHTML = resultHTML;
-                    document.getElementById('form_pre').style.display = 'flex';
-                    document.getElementById('form_pre').style.marginTop = '1rem';
 
-                    showNotification('データを取得完了')
-
+                    const taskId = data.task_id;
+                    checkTaskResult(taskId);  // タスクの結果をチェックする関数を呼び出す
                 })
                 .catch(error => {
                     document.getElementById('form_results').innerHTML = `<p style="color: red;">エラー: ${error.message}</p>`;
                 });
         });
+
+        // タスク結果をチェックする関数
+        function checkTaskResult(taskId) {
+            fetch(`/task_result/${taskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.state === 'PENDING') {
+                        setTimeout(() => checkTaskResult(taskId), 1000); // 1秒後に再度チェック
+                    } else if (data.state === 'SUCCESS') {
+                        // 結果を表示
+                        showNotification("連絡先データを取得しました。");
+                        console.log(data);
+                        console.log(data.result);
+
+                        let resultHTML = '';
+
+                        // エラーがある場合
+                        if (data.result.error) {
+                            resultHTML = `<p style="color: red;">エラー: ${data.result.error}</p>`;
+                        } else {
+                            // 電話番号の処理
+                            if (!data.result.phone_numbers || data.result.phone_numbers.length === 0) {
+                                resultHTML += `<h4>電話番号</h4><ul><li>データを取得できませんでした。</li></ul>`;
+                            } else {
+                                resultHTML += `<h4>電話番号</h4><ul>${data.result.phone_numbers.map(num => `<li>${num}</li>`).join('')}</ul>`;
+                            }
+
+                            // メールアドレスの処理
+                            if (!data.result.emails || data.result.emails.length === 0) {
+                                resultHTML += `<h4>メールアドレス</h4><ul><li>データを取得できませんでした。</li></ul>`;
+                            } else {
+                                resultHTML += `<h4>メールアドレス</h4><ul>${data.result.emails.map(email => `<li>${email}</li>`).join('')}</ul>`;
+                            }
+
+                            // お問い合わせリンクの処理
+                            if (!data.result.contact_links || data.result.contact_links.length === 0) {
+                                resultHTML += `<h4>お問い合わせリンク</h4><ul><li>データを取得できませんでした。</li></ul>`;
+                            } else {
+                                resultHTML += `<h4>お問い合わせリンク</h4><ul>${data.result.contact_links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}</ul>`;
+                            }
+                        }
+
+                        document.getElementById('form_results').innerHTML = resultHTML;
+                        document.getElementById('form_pre').style.display = 'flex';
+                        document.getElementById('form_pre').style.marginTop = '1rem';
+                    } else {
+                        document.getElementById('form_results').innerHTML = `<p style="color: red;">エラー: ${data.result.error}</p>`;
+                    }
+                });
+        }
+
 
         // スプレッドシートから読み込み、更新するパターン
         document.getElementById('spreadsheetForm').addEventListener('submit', function (event) {
@@ -237,6 +337,7 @@ GET https://clientinfo.vercel.app/extract?company_url=https://ebacorp.jp/
                 alert('スプレッドシートIDを入力してください。');
                 return;
             }
+            showNotification("スプレッドシート更新を開始しました。");
 
             fetch(`/update_spreadsheet?spreadsheet_id=${encodeURIComponent(spreadsheetId)}`)
                 .then(response => {
@@ -249,13 +350,70 @@ GET https://clientinfo.vercel.app/extract?company_url=https://ebacorp.jp/
                     if (data.error) {
                         document.getElementById('spread_results').innerHTML = `<p style="color: red;">エラー: ${data.error}</p>`;
                     } else {
-                        document.getElementById('spread_results').innerHTML = `<p>スプレッドシートが更新されました。</p>`;
+
+                        const task_id = data.task_id;
+                        checkUpdateTaskResult(task_id);  // タスクの結果をチェックする関数を呼び出す
+
                     }
                 })
                 .catch(error => {
                     document.getElementById('spread_results').innerHTML = `<p style="color: red;">エラー: ${error.message}</p>`;
                 });
         });
+
+        // タスク結果をチェックする関数
+        function checkUpdateTaskResult(taskId) {
+            if (!taskId) {
+                console.error('Task ID is undefined');
+                return; // 終了して、エラーをログに記録
+            }
+            fetch(`/update_task_result/${taskId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch update task result');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.state === 'PENDING') {
+                        setTimeout(() => checkUpdateTaskResult(taskId), 1000); // 1秒後に再度チェック
+                    } else if (data.state === 'SUCCESS') {
+                        // 更新完了の通知
+                        showNotification("スプレッドシートの更新が完了しました。");  // {既存の内容}　→　{新規の内容}
+                    } else {
+                        document.getElementById('spread_results').innerHTML = `<p style="color: red;">エラー: ${data.result.error}</p>`;
+                    }
+                });
+        }
+
+        function getSearchResult() {
+            showNotification("データ検索を開始しました。");
+            const companyUrl = document.getElementById('companyUrl_background').value;
+            if (!companyUrl) {
+                alert('URLを入力してください。');
+                return;
+            }
+            if (window.location.hostname === 'localhost') {
+                window.open(`http://localhost:8080//extract?company_url=${companyUrl}`, '_blank');
+            } else {
+                window.open(`http://clientinfo.vercel.app//extract?company_url=${companyUrl}`, '_blank');
+            }
+
+        }
+
+
+        function getTaskResult() {
+            const taskId = document.getElementById('taskId').value;
+            if (!taskId) {
+                alert('タスクIDを入力してください。');
+                return;
+            }
+            if (window.location.hostname === 'localhost') {
+                window.open(`http://localhost:8080/task_result/${taskId}`, '_blank');
+            } else {
+                window.open(`http://clientinfo.vercel.app/task_result/${taskId}`, '_blank');
+            }
+        }
 
     </script>
 </body>
