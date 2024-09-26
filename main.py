@@ -59,7 +59,7 @@ def extract_info():
 
     # Celeryタスクを非同期に実行
     # celery -A celery_worker worker --loglevel=info
-    task = cel.send_task('tasks.extract_contact_info_task', args=[url])
+    task = cel.send_task('celery_worker.extract_contact_info_task', args=[url])
 
     # タスクIDを返却（クライアントでポーリングするため）
     return {'task_id': task.id}
@@ -119,7 +119,7 @@ def update_spreadsheet():
     try:
         # 連絡先を検索
         # task = cel.update_spreadsheet_task.delay(spreadsheet_id)
-        task = cel.send_task('tasks.update_spreadsheet_task', args=[spreadsheet_id])
+        task = cel.send_task('celery_worker.update_spreadsheet_task', args=[spreadsheet_id])
 
         return json.dumps({"task_id": task.id}, ensure_ascii=False, indent=4)
 
