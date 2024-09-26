@@ -12,6 +12,7 @@ from functools import lru_cache
 # from celery_worker import extract_contact_info_task, update_spreadsheet_task
 from celery import Celery
 import warnings
+from celery.result import AsyncResult
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 app = Bottle()
@@ -59,14 +60,15 @@ def extract_info():
 
     # Celeryタスクを非同期に実行
     # celery -A celery_worker worker --loglevel=info
-    task = cel.extract_contact_info_task.delay(url)
+    task = cel.send_task('tasks.extract_contact_info_task', args=[url])
 
     # タスクIDを返却（クライアントでポーリングするため）
     return {'task_id': task.id}
 
 @app.route('/task_result/<task_id>', method='GET')
 def task_result(task_id):
-    result = cel.extract_contact_info_task.AsyncResult(task_id)
+    # result = cel.extract_contact_info_task.AsyncResult(task_id)
+    result = AsyncResult(task_id, app=cel)
 
     if result.state == 'PENDING':
         response.content_type = 'application/json'
@@ -85,7 +87,9 @@ def task_result(task_id):
     
 @app.route('/update_task_result/<task_id>', method='GET')
 def update_task_result(task_id):
-    result = cel.extract_contact_info_task.AsyncResult(task_id)  # {既存の内容}　→　{新規の内容}
+    # result = cel.extract_contact_info_task.AsyncResult(task_id)
+    result = AsyncResult(task_id, app=cel)
+
     if result.state == 'PENDING':
         response.content_type = 'application/json'
         return {'state': result.state}
@@ -115,7 +119,8 @@ def update_spreadsheet():
     # 読み込んだスプレッドシートのA列＝会社URL（1行目はヘッダー）
     try:
         # 連絡先を検索
-        task = cel.update_spreadsheet_task.delay(spreadsheet_id)
+        # task = cel.update_spreadsheet_task.delay(spreadsheet_id)
+        task = cel.send_task('tasks.update_spreadsheet_task', args=[spreadsheet_id])
 
         return json.dumps({"task_id": task.id}, ensure_ascii=False, indent=4)
 
