@@ -9,7 +9,6 @@ import os
 from credentials import get_credentials
 import logging
 from functools import lru_cache
-# from celery_worker import extract_contact_info_task, update_spreadsheet_task
 from celery import Celery
 import warnings
 from celery.result import AsyncResult
@@ -28,7 +27,7 @@ app = Bottle()
 environment = os.getenv('ENVIRONMENT', 'local')
 
 redis_url = os.getenv('REDIS_URL')
-cel = Celery('tasks', broker=redis_url, backend=redis_url)
+cel = Celery('celery_worker', broker=redis_url, backend=redis_url)
 
 # # ロガーの設定
 # logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
@@ -60,7 +59,7 @@ def extract_info():
 
     # Celeryタスクを非同期に実行
     # celery -A celery_worker worker --loglevel=info
-    task = cel.send_task('tasks.extract_contact_info_task', args=[url])
+    task = cel.send_task('celery_worker.extract_contact_info_task', args=[url])
 
     # タスクIDを返却（クライアントでポーリングするため）
     return {'task_id': task.id}
@@ -120,7 +119,7 @@ def update_spreadsheet():
     try:
         # 連絡先を検索
         # task = cel.update_spreadsheet_task.delay(spreadsheet_id)
-        task = cel.send_task('tasks.update_spreadsheet_task', args=[spreadsheet_id])
+        task = cel.send_task('celery_worker.update_spreadsheet_task', args=[spreadsheet_id])
 
         return json.dumps({"task_id": task.id}, ensure_ascii=False, indent=4)
 
