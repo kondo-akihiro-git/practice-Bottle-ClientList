@@ -16,7 +16,9 @@ from functools import lru_cache
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-app = Celery('tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
+# app = Celery('tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
+app = Celery('tasks', broker=os.getenv('REDIS_URL'), backend=os.getenv('REDIS_URL'))
+
 
 # Google Sheets API認証設定
 creds = get_credentials()
