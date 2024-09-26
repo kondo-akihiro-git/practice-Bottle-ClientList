@@ -1,2 +1,4 @@
 credentials.json
 test.py
+app.log
+ec2-key-pair.pem
